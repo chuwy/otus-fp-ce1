@@ -22,7 +22,9 @@ import algebra.Console._
 class ConsoleSpec extends Specification {
   "ConsoleSpec" should {
     "print something" in {
-      ok
+      val (finalResult, _) = greetSomeone[Test].run(RealWorld(Nil)).value
+
+      finalResult.log must beEqualTo(List("PUT What is your name?", "READ Bob", "PUT Hello, Bob!"))
     }
   }
 }

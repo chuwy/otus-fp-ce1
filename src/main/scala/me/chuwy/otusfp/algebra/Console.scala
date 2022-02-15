@@ -21,15 +21,43 @@ object Console {
 
   type Test[A] = State[RealWorld, A]
 
+  // Summoner
   def apply[F[_]](implicit ev: Console[F]): Console[F] = ev
 
   implicit val interpreter: Console[IO] =
-    ???
+    new Console[IO] {
+      def putStrLn(str: String): IO[Unit] =
+        IO.delay(println(str))
 
-  implicit val testInterpreter: Console[Test] =
-    ???
+      def readLine: IO[String] =
+        IO.delay(StdIn.readLine())
+    }
 
-  def greetSomeone[F[_]: Console: Monad]: F[Unit] =
-    ???
+  implicit def testInterpreter: Console[Test] =
+    new Console[Test] {
+      def putStrLn(str: String): Test[Unit] = {
+        val stateFunc = (realWorld: RealWorld) =>
+          (realWorld.copy(log = s"PUT $str" :: realWorld.log), ())
+
+        State(stateFunc)
+      }
+
+
+      def readLine: Test[String] = {
+        val stateFunc = (realWorld: RealWorld) =>
+          (realWorld.copy(log = "READ" :: realWorld.log), "Bob")
+
+        State(stateFunc)
+      }
+    }
+
+
+  def greetSomeone[F[_]: Console: Monad]: F[Unit] = {
+    for {
+      _ <- Console[F].putStrLn("What is your name?")
+      name <- Console[F].readLine
+      _ <- Console[F].putStrLn(s"Hello, $name")
+    } yield ()
+  }
 
 }
